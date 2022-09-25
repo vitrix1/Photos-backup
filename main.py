@@ -1,6 +1,8 @@
 import sys
-import time
 from pprint import pprint
+
+from tqdm import tqdm
+# from pprint import pprint
 import json
 import requests
 from datetime import datetime
@@ -8,20 +10,25 @@ from datetime import datetime
 
 class VK:
 
-    def __init__(self, version='5.131', count=5):
+    def __init__(self, count=5, album_id='profile', version='5.131'):
         self.version = version
-        self.params = {'access_token': access_token_vk, 'v': self.version}
         self.count = count
+        self.params = {'access_token': access_token_vk,
+                       'v': self.version,
+                       'album_id': album_id}
 
     def users_photo(self):
         url = 'https://api.vk.com/method/photos.get'
         params = {'owner_id': f'{user_id}',
-                  'album_id': 'profile',
                   'extended': 1,
                   'count': self.count,
                   'rev': 1}
         response = requests.get(url, params={**self.params, **params})
-        return response.json()
+        if 'error' not in response.json().keys():
+            return response.json()
+        else:
+            print('Error in VK response')
+            raise SystemExit
 
 
 class YaDisk:
@@ -40,11 +47,11 @@ class YaDisk:
             date = datetime.now().strftime("%H_%M_%S")
             params = {'url': self.photo_url, 'path': f'photos_backup/{user_id}/{self.photo_likes} {date}'}
             resp = requests.post(url=self.url_to_upload, headers=headers, params=params)
-            print(resp)
+            # print(resp)
         else:
             params = {'url': self.photo_url, 'path': f'photos_backup/{user_id}/{self.photo_likes}'}
             resp = requests.post(url=self.url_to_upload, headers=headers, params=params)
-            print(resp)
+            # print(resp)
         names = requests.get(self.url_to_check_files_name, headers=headers)
         photos_data = []
         for image in names.json()['items']:
@@ -70,13 +77,9 @@ if __name__ == '__main__':
     requests.put(create_dir_url,
                  headers=headers,
                  params={'path': f'photos_backup/{user_id}'})
-    if len(sys.argv) < 3:
-        vk = VK()
-        photos = vk.users_photo()['response']['items']
-    else:
-        vk = VK(count=int(sys.argv[2]))
-        photos = vk.users_photo()['response']['items']
-    for item in photos:
+    vk = VK()
+    photos = vk.users_photo()['response']['items']
+    for item in tqdm(photos, desc="Upload", colour="white"):
         ya = YaDisk(photo_url=item['sizes'][-1]['url'],
                     photo_likes=str(item['likes']['count']) + '.jpg')
         ya.upload()
