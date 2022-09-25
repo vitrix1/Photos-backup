@@ -1,6 +1,4 @@
 import sys
-from pprint import pprint
-
 from tqdm import tqdm
 # from pprint import pprint
 import json
@@ -47,11 +45,9 @@ class YaDisk:
             date = datetime.now().strftime("%H_%M_%S")
             params = {'url': self.photo_url, 'path': f'photos_backup/{user_id}/{self.photo_likes} {date}'}
             resp = requests.post(url=self.url_to_upload, headers=headers, params=params)
-            # print(resp)
         else:
             params = {'url': self.photo_url, 'path': f'photos_backup/{user_id}/{self.photo_likes}'}
             resp = requests.post(url=self.url_to_upload, headers=headers, params=params)
-            # print(resp)
         names = requests.get(self.url_to_check_files_name, headers=headers)
         photos_data = []
         for image in names.json()['items']:
